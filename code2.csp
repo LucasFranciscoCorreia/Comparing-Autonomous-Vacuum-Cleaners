@@ -1,0 +1,365 @@
+eastIsClear(m, paints, next) =
+		let
+			EAST1(m, paints) = EAST(0, m, paints, RETURN2)
+			RETURN2(m, paints) = 
+				let
+					x = countVar(get(m,"X"))
+					y = countVar(get(m,"Y"))
+					o = countVar(get(m,"ORIENTATION"))
+				within
+					--allFrontIsWhite_.x.y.o.(frontIsClear(x, y, o)).(frontIsWhite(x, y, o, paints)).(frontIsClear(x, y, o) and not(frontIsWhite(x, y, o, paints))) ->
+					ASSIGN("RETURN", <B.(frontIsClear(x, y, o) and not(frontIsWhite(x, y, o, paints)))>, m, paints, next)
+		within
+			EAST1(m, paints)
+			
+westIsClear(m, paints, next) =
+		let
+			WEST3(m, paints) = WEST(0, m, paints, RETURN4)
+			RETURN4(m, paints) = 
+				let
+					x = countVar(get(m,"X"))
+					y = countVar(get(m,"Y"))
+					o = countVar(get(m,"ORIENTATION"))
+				within
+					--allFrontIsWhite_.x.y.o.(frontIsClear(x, y, o)).(frontIsWhite(x, y, o, paints)).(frontIsClear(x, y, o) and not(frontIsWhite(x, y, o, paints))) ->
+					ASSIGN("RETURN", <B.(frontIsClear(x, y, o) and not(frontIsWhite(x, y, o, paints)))>, m, paints, next)
+		within
+			WEST3(m, paints)
+			
+northIsClear(m, paints, next) =
+		let
+			NORTH5(m, paints) = NORTH(0, m, paints, RETURN6)
+			RETURN6(m, paints) = 
+				let
+					x = countVar(get(m,"X"))
+					y = countVar(get(m,"Y"))
+					o = countVar(get(m,"ORIENTATION"))
+				within
+					--allFrontIsWhite_.x.y.o.(frontIsClear(x, y, o)).(frontIsWhite(x, y, o, paints)).(frontIsClear(x, y, o) and not(frontIsWhite(x, y, o, paints))) ->
+					ASSIGN("RETURN", <B.(frontIsClear(x, y, o) and not(frontIsWhite(x, y, o, paints)))>, m, paints, next)
+		within
+			NORTH5(m, paints)
+			
+southIsClear(m, paints, next) =
+		let
+			SOUTH7(m, paints) = SOUTH(0, m, paints, RETURN8)
+			RETURN8(m, paints) = 
+				let
+					x = countVar(get(m,"X"))
+					y = countVar(get(m,"Y"))
+					o = countVar(get(m,"ORIENTATION"))
+				within
+					--allFrontIsWhite_.x.y.o.(frontIsClear(x, y, o)).(frontIsWhite(x, y, o, paints)).(frontIsClear(x, y, o) and not(frontIsWhite(x, y, o, paints))) ->
+					ASSIGN("RETURN", <B.(frontIsClear(x, y, o) and not(frontIsWhite(x, y, o, paints)))>, m, paints, next)
+		within
+			SOUTH7(m, paints)
+			
+
+walkFront(m, paints, next) =
+		let
+			WHILE9(m, paints) = 
+					let
+					  x = countVar(get(m, "X"))
+					  y = countVar(get(m, "Y"))
+					  o = countVar(get(m, "ORIENTATION"))
+					  FORWARD10(m, paints) = FORWARD(1, m, paints, WHILE9)
+					within
+						if(frontIsClear(x, y, o) and not(frontIsWhite(x, y, o, paints))) then (
+							FORWARD10(m, paints)
+						) else (
+							next(m, paints)
+						)
+			
+		within
+			WHILE9(m, paints)
+
+chooseWay(m, paints, next) =
+		let
+			ASSIGN16(m, paints) = 
+				let
+					cangovert_ = toBool(head(get(m, "cangovert_")))
+					cangohor_ = toBool(head(get(m, "cangohor_")))
+				within
+					if(cangovert_ and not(cangohor_)) then(
+						ASSIGN("vert_", <B.true>, m, paints, IF17)
+					) else if(cangohor_ and not(cangovert_)) then(
+						ASSIGN("vert_", <B.false>, m, paints, IF17)
+					) else (
+						coin?c -> 
+						ASSIGN("vert_", <B.c>, m, paints, IF17)
+					)
+			IF17(m, paints) = 
+			 let
+				 vert_ = toBool(head(get(m, "vert_")))
+				 IF18(m, paints) = 
+				  let
+				 	 nic_ = toBool(head(get(m, "nic_")))
+				 	 sic_ = toBool(head(get(m, "sic_")))
+				 	 NORTH19(m, paints) = NORTH(0, m, paints, next)
+				 	 IF20(m, paints) = 
+				 	  let
+				 	 	 sic_ = toBool(head(get(m, "sic_")))
+				 	 	 nic_ = toBool(head(get(m, "nic_")))
+				 	 	 SOUTH21(m, paints) = SOUTH(0, m, paints, next)
+				 	 	 IF22(m, paints) = 
+				 	 	  let				 	 	 	 
+				 	 	 	 NORTH23(m, paints) = NORTH(0, m, paints, next)
+				 	 	 	 SOUTH24(m, paints) = SOUTH(0, m, paints, next)
+				 	 	    within
+								coin?c -> 
+				 	 	 	 	if(c) then (
+				 	 	 	 	  	NORTH23(m, paints)
+				 	 	 	 	) else (
+				 	 	 		   	SOUTH24(m, paints)
+				 	 	 	 	)
+				 	    within
+				 	 	 	if(sic_ and not(nic_)) then (
+				 	 	 	  	SOUTH21(m, paints)
+				 	 	 	) else (
+				 	 		   	IF22(m, paints)
+				 	 	 	)
+				    within
+				 	 	if(nic_ and not(sic_)) then (
+				 	 	  	NORTH19(m, paints)
+				 	 	) else (
+				 		   	IF20(m, paints)
+				 	 	)
+				 
+				 IF25(m, paints) = 
+				  let
+				 	 eic_ = toBool(head(get(m, "eic_")))
+				 	 wic_ = toBool(head(get(m, "wic_")))
+				 	 EAST26(m, paints) = EAST(0, m, paints, next)
+				 	 IF27(m, paints) = 
+				 	  let
+				 	 	 wic_ = toBool(head(get(m, "wic_")))
+				 	 	 eic_ = toBool(head(get(m, "eic_")))
+				 	 	 WEST28(m, paints) = WEST(0, m, paints, next)
+				 	 	 IF29(m, paints) = 
+				 	 	  	let
+								EAST30(m, paints) = EAST(0, m, paints, next)
+								WEST31(m, paints) = WEST(0, m, paints, next)
+							within
+								coin?c -> 
+								if(c) then (
+									EAST30(m, paints)
+								) else (
+									WEST31(m, paints)
+								)
+				 	    within
+				 	 	 	if(wic_ and not(eic_)) then (
+				 	 	 	  	WEST28(m, paints)
+				 	 	 	) else (
+				 	 		   	IF29(m, paints)
+				 	 	 	)
+				    within
+				 	 	if(eic_ and not(wic_)) then (
+				 	 	  	EAST26(m, paints)
+				 	 	) else (
+				 		   	IF27(m, paints)
+				 	 	)
+				 
+				 {- end IF -}
+			   within
+				 	if(vert_) then (
+				 	  	IF18(m, paints)
+				 	) else (
+					   	IF25(m, paints)
+				 	)
+			
+		within
+			ASSIGN16(m, paints)
+			
+newWay(m, paints, next) =
+		let
+			ASSIGN32(m, paints) = ASSIGN("COUNT_STEPS", <I.0>, m, paints, ASSIGN33)
+			ASSIGN33(m, paints) = ASSIGN("found_", <B.false>, m, paints, WHILE34)
+			WHILE34(m, paints) = 
+					let
+					  x = countVar(get(m, "X"))
+					  y = countVar(get(m, "Y"))
+					  o = countVar(get(m, "ORIENTATION"))
+					  
+					  found_ = toBool(head(get(m, "found_")))
+					  count_ = countVar(get(m, "COUNT_STEPS"))
+					  
+					  {- WHILE true -}
+					  ASSIGN35(m, paints) = RETURN("nic_",northIsClear, m, paints, ASSIGN37)
+					  ASSIGN37(m, paints) = RETURN("eic_",eastIsClear, m, paints, ASSIGN39)
+					  ASSIGN39(m, paints) = RETURN("sic_",southIsClear, m, paints, ASSIGN41)
+					  ASSIGN41(m, paints) = RETURN("wic_",westIsClear, m, paints, ASSIGN43)
+					  ASSIGN43(m, paints) = ASSIGN("cangovert_", <B.(toBool(head(get(m, "nic_"))) or toBool(head(get(m, "sic_"))))>, m, paints, ASSIGN44)
+					  ASSIGN44(m, paints) = ASSIGN("cangohor_", <B.(toBool(head(get(m, "eic_"))) or toBool(head(get(m, "wic_"))))>, m, paints, PROC_CALL45)	
+					  PROC_CALL45(m, paints) = chooseWay(m, paints, WHILE46)
+					  WHILE46(m, paints) = 
+					  		let
+					  		  x = countVar(get(m, "X"))
+					  		  y = countVar(get(m, "Y"))
+					  		  o = countVar(get(m, "ORIENTATION"))
+					  		  
+							  count_ = countVar(get(m, "COUNT_STEPS"))
+					  		  FORWARD47(m, paints) = FORWARD(1, m, paints, ASSIGN48)
+					  		  ASSIGN48(m, paints) = ASSIGN("COUNT_STEPS", fillValSeq(count_+1), m, paints, IF49)	
+					  		  IF49(m, paints) = 
+					  		   let
+					  		  	 x = countVar(get(m,"X"))
+					  		  	 y = countVar(get(m,"Y"))
+					  		  	 o = countVar(get(m,"ORIENTATION"))
+					  		  	 
+								 --paints = getAllPaints(paints)
+					  		  	 ASSIGN50(m, paints) = ASSIGN("found_", <B.true>, m, paints, BREAK51)
+					  		  	 BREAK51(m, paints) = WHILE34(m, paints)
+					  		  	 IF52(m, paints) = 
+					  		  	  	let
+					  		  	 	 x = countVar(get(m,"X"))
+					  		  	 	 y = countVar(get(m,"Y"))
+					  		  	 	 o = countVar(get(m,"ORIENTATION"))
+					  		  	 	 
+									 --paints = getAllPaints(paints)
+					  		  	 	 RIGHT53(m, paints) = RIGHT(m, paints, ASSIGN54)
+					  		  	 	 ASSIGN54(m, paints) = ASSIGN("found_", <B.true>, m, paints, BREAK55)
+					  		  	 	 BREAK55(m, paints) = WHILE34(m, paints)
+					  		  	 	 {- IF false (length : 1)-}	 
+					  		  	 	 IF56(m, paints) = 
+					  		  	 	 	let
+					  		  	 	 	 x = countVar(get(m,"X"))
+					  		  	 	 	 y = countVar(get(m,"Y"))
+					  		  	 	 	 o = countVar(get(m,"ORIENTATION"))
+					  		  	 	 	 
+					  		  	 	 	 --paints = getAllPaints(paints)
+					  		  	 	 	  {- IF true -}
+					  		  	 	 	 LEFT57(m, paints) = LEFT(m, paints, ASSIGN58)
+					  		  	 	 	 ASSIGN58(m, paints) = ASSIGN("found_", <B.true>, m, paints, BREAK59)	
+					  		  	 	 	 BREAK59(m, paints) = WHILE34(m, paints)
+					  		  	 	 	 {- end IF -}
+					  		  	 	   within
+					  		  	 	 		 if(leftIsClear(x, y, o) and not(leftIsWhite(x, y, o, paints))) then (
+					  		  	 	 		   	LEFT57(m, paints)
+					  		  	 	 		 ) else (
+					  		  	 	 		 	WHILE46(m, paints)
+					  		  	 	 		 )
+									within					  		  	    	 
+					  		  	 	 	if(rightIsClear(x, y, o) and not(rightIsWhite(x, y, o, paints))) then (
+					  		  	 	 	  	RIGHT53(m, paints)
+					  		  	 	 	) else (
+					  		  	 		   	IF56(m, paints)
+					  		  	 	 	)
+					  		  	 
+					  		  	 {- end IF -}
+					  		     within
+					  		  	 	if(frontIsClear(x, y, o) and not(frontIsWhite(x, y, o, paints))) then (
+					  		  	 	  	ASSIGN50(m, paints)
+					  		  	 	) else (
+					  		  		   	IF52(m, paints)
+					  		  	 	)
+					  		  
+					  		  {- end WHILE-}
+					  		within
+					  				if(count_ < STEPS and frontIsClear(x, y, o)) then (
+					  					FORWARD47(m, paints)
+					  				) else (
+					  					WHILE34(m, paints)
+					  				)
+					  RETURN60(m, paints) = ASSIGN("RETURN", get(m, "found_"), m, paints, next)
+					within
+							if(count_ < STEPS and not(found_)) then (
+								ASSIGN35(m, paints)
+							) else (
+								RETURN60(m, paints)
+							)
+		within
+			ASSIGN32(m, paints)
+			
+
+
+USER_VARS = {"nic_","sic_","eic_","wic_","vert_","cango_","steps_","count_","found_","cangovert_","cangohor_","cango_"}
+
+PROGRAM = ASSIGN84(INIT, INITIAL_PAINTS)
+--PROGRAM(pos) = ASSIGN84(union(pos, INIT))
+ASSIGN84(m, paints) = RETURN("nic_",northIsClear, m, paints, ASSIGN86)
+ASSIGN86(m, paints) = RETURN("eic_",eastIsClear, m, paints, ASSIGN88)
+ASSIGN88(m, paints) = RETURN("sic_",southIsClear, m, paints, ASSIGN90)
+ASSIGN90(m, paints) = RETURN("wic_",westIsClear, m, paints, ASSIGN92)	
+ASSIGN92(m, paints) = 
+				let
+					nic_ = toBool(head(get(m, "nic_")))
+					sic_ = toBool(head(get(m, "sic_")))
+					
+				within
+					ASSIGN("cangovert_", <B.(nic_ or sic_)>, m, paints, ASSIGN93)
+ASSIGN93(m, paints) = 
+				let
+					eic_ = toBool(head(get(m, "eic_")))
+					wic_ = toBool(head(get(m, "wic_")))
+				within
+					ASSIGN("cangohor_", <B.(eic_ or wic_)>, m, paints, ASSIGN94)
+ASSIGN94(m, paints) = 
+				--debug.toBool(get(m, "nic_")) -> 
+				--debug.toBool(get(m, "sic_")) -> 
+				--debug.toBool(get(m, "eic_")) -> 
+				--debug.toBool(get(m, "wic_")) -> 
+				--debug.toBool(get(m, "cangovert_")) -> 
+				--debug.toBool(get(m, "cangohor_")) -> 
+				ASSIGN("cango_", <B.true>, m, paints, PAINTWHITE96)
+
+PAINTWHITE96(m, paints) = PAINTWHITE(m, paints, WHILE97)
+
+channel test
+WHILE97(m, paints) = 
+		let
+		  x = countVar(get(m, "X"))
+		  y = countVar(get(m, "Y"))
+		  o = countVar(get(m, "ORIENTATION"))
+		  
+		  cango_ = toBool(head(get(m, "cango_")))
+		  
+		  {- WHILE true -}
+		  PROC_CALL98(m, paints) = chooseWay(m, paints, PROC_CALL99)
+		  PROC_CALL99(m, paints) = walkFront(m, paints, ASSIGN100)
+		  ASSIGN100(m, paints) = RETURN("nic_",northIsClear, m, paints, ASSIGN102)
+		  ASSIGN102(m, paints) = RETURN("eic_",eastIsClear, m, paints, ASSIGN104)
+		  ASSIGN104(m, paints) = RETURN("sic_",southIsClear, m, paints, ASSIGN106)
+		  ASSIGN106(m, paints) = RETURN("wic_",westIsClear, m, paints, ASSIGN108)
+		  ASSIGN108(m, paints) = 
+		  				let
+		  					nic_ = toBool(head(get(m, "nic_")))
+		  					sic_ = toBool(head(get(m, "sic_")))
+		  					
+		  				within
+							ASSIGN("cangovert_", <B.(nic_ or sic_)>, m, paints, ASSIGN109)
+		  ASSIGN109(m, paints) = 
+		  				let
+		  					eic_ = toBool(head(get(m, "eic_")))
+		  					wic_ = toBool(head(get(m, "wic_")))
+		  					
+		  				within
+							ASSIGN("cangohor_", <B.(eic_ or wic_)>, m, paints,  IF110)
+		  IF110(m, paints) = 
+		  	let
+		  	 x = countVar(get(m,"X"))
+		  	 y = countVar(get(m,"Y"))
+		  	 o = countVar(get(m,"ORIENTATION"))
+		  	 
+		  	 cangovert_ = toBool(head(get(m, "cangovert_")))
+		  	 cangohor_ = toBool(head(get(m, "cangohor_")))
+		  	 
+		  	  {- IF true -}
+		  	 ASSIGN111(m, paints) = RETURN("cango_",newWay, m, paints, WHILE97)
+		  	 
+		  	 {- end IF -}
+		    within
+		  		 if(not(cangovert_ or cangohor_)) then (
+		  		   	ASSIGN111(m, paints)
+		  		 ) else (
+		  		 	WHILE97(m, paints)
+		  		 )
+		  
+		  {- end WHILE-}
+		within
+				if(cango_) then (
+					PROC_CALL98(m, paints)
+				) else (
+					TERMINATE(m, paints)
+				)
+
+

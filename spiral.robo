@@ -1,0 +1,25 @@
+procedure spiral {
+    if(rightIsClear and not(rightIsWhite)){
+        right
+        forward(1)
+        spiral()
+        backward(1)
+        left
+    }
+    if(frontIsClear and not(frontIsWhite)){
+        forward(1)
+        spiral()
+        backward(1)
+    }
+    if(leftIsClear and not(leftIsWhite)){
+        left
+        forward(1)
+        spiral()
+        backward(1)
+        right
+    }
+}
+
+paintWhite
+south(0)
+spiral

@@ -1,0 +1,63 @@
+procedure eastIsClear(){
+  east(0)
+  return(frontIsClear() and not(frontIsWhite()))
+}
+
+procedure westIsClear(){
+  west(0)
+  return(frontIsClear() and not(frontIsWhite()))
+}
+
+procedure northIsClear(){
+  north(0)
+  return(frontIsClear() and not(frontIsWhite()))
+}
+
+procedure southIsClear(){
+  south(0)
+  return(frontIsClear() and not(frontIsWhite()))
+}
+
+paintWhite()
+repeatWhile(not(frontIsWhite())){
+    repeatWhile(frontIsClear())){
+        forward(1)
+    }
+    if(flipCoin()){
+        if(northIsClear() and not(southIsClear())){
+            north()
+        }else {
+            if (southIsClear() and not(northIsClear())){
+                south()
+            } else {
+                if(flipCoin()){
+                    if(northIsClear() ){
+                        north()
+                    }
+                } else {
+                    if(southIsClear()){
+                        south()
+                    }
+                }
+            }
+        }
+    } else {
+        if(eastIsClear() and not(westIsClear())){
+            east()
+        }else {
+            if (westIsClear() and not(eastIsClear())){
+                west()
+            }else{
+                if(flipCoin()){
+                    if(eastIsClear()){
+                        east()
+                    }
+                }else{
+                    if(westIsClear()){
+                        west()
+                    }
+                }
+            }
+        }
+    }
+}

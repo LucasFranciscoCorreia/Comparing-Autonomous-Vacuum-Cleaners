@@ -1,0 +1,139 @@
+procedure eastIsClear(){
+  east(0)
+  return(frontIsClear() and not(frontIsWhite()))
+}
+
+procedure westIsClear(){
+  west(0)
+  return(frontIsClear() and not(frontIsWhite()))
+}
+
+procedure northIsClear(){
+  north(0)
+  return(frontIsClear() and not(frontIsWhite()))
+}
+
+procedure southIsClear(){
+  south(0)
+  return(frontIsClear() and not(frontIsWhite()))
+}
+
+procedure walkFront(){
+    repeatWhile(frontIsClear() and not(frontIsWhite())){
+        forward(1)
+    }    
+}
+
+nic = northIsClear()
+sic = southIsClear()
+eic = eastIsClear()
+wic = westIsClear()
+cangovert = nic or sic
+cangohor = eic or wic
+
+
+procedure chooseWay(){
+    if(cangovert and not(cangohor)){
+        vert = true
+    } else {
+        if(cangohor and not(cangovert)){
+            vert = false
+        } else {
+            vert = flipCoin()
+        }
+    }
+    if(vert){
+        if(nic and not(sic)){
+            north(0)
+        }else {
+            if (sic and not(nic)){
+                south(0)
+            } else {
+                if(flipCoin()){
+                   north(0)
+                } else {
+                   south(0)
+                }
+            }
+        }
+    } else {
+        if(eic and not(wic)){
+            east(0)
+        }else {
+            if (wic and not(eic)){
+                west(0)
+            }else{
+                if(flipCoin()){
+                   east(0)
+                }else{
+                   west(0)
+                }
+            }
+        }
+    }
+}
+
+cango = true
+
+steps = 50
+
+procedure newWay(){
+    count = 0
+    found = false
+    repeatWhile(count < steps and not(found)){
+        nic = northIsClear()
+        sic = southIsClear()
+        eic = eastIsClear()
+        wic = westIsClear()
+        cangovert = nic or sic
+        cangohor = eic or wic
+        chooseWay()
+        repeatWhile(count < steps and frontIsClear()){   
+            forward(1)
+            count = count + 1
+            if(frontIsClear() and not(frontIsWhite())){
+                found = true
+                break
+            }else {
+            	if(rightIsClear() and not(rightIsWhite())){
+                	right()
+                	found = true
+                	break
+            	}else{
+	                if(leftIsClear() and not(leftIsWhite())){
+                    	left()
+                    	found = true    
+                    	break
+                	}   
+            	}
+           	}
+		}
+    }
+    return(found)
+}
+
+paintWhite()
+
+repeatWhile(cango){
+    chooseWay()
+    walkFront()
+    nic = northIsClear()
+    sic = southIsClear()
+    eic = eastIsClear()
+    wic = westIsClear()
+    cangovert = nic or sic
+    cangohor = eic or wic
+    if(not(cangovert or cangohor)){
+        cango = newWay()
+    }
+}
+
+
+
+
+
+
+
+
+
+

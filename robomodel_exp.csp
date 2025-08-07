@@ -1,0 +1,658 @@
+-- root: aux.csp
+{-
+
+ROBO CSP specification 16/03/2018
+Sidney de Carvalho Nogueira (sidney.ufrpe@gmail.com)
+
+Notes:
+- RAW_MAP, PAINT and COMMANDS are assumed to be in context
+- RAW_MAP is assumed to be a retangule
+- there is no command to move the beacon
+- paint is static
+- procedures are not supported
+- there are no commands to move the beacon
+
+coordinate system is:
+
+0,0 1,0 ... "X",0
+0,1 1,1 ... "X",1
+0,2 1,2 ... "X",2
+...
+0,"Y" 1,"Y" ... "X","Y"
+
+where "Y" is YMAX and "X" is XMAX
+
+ERROR(m) is when "break" is outside of a loop
+ERROR2(m) is when a variable is not declared and called to get a value
+
+-}
+
+--
+-- map elements
+--
+
+-- this constant is required only for debbuging in FDR (probe).
+
+channel effort : {(-1)..MIN_MAX*MIN_MAX}
+
+datatype Colors = White | Black | None
+
+-- one can replace MIN_MAX by Int in the definition of DATA if not debbuging
+datatype DATA = B.Bool
+                | I.{(-1)..MIN_MAX}
+                | BCN.{(-1)..MIN_MAX}.{(-1)..MIN_MAX}
+                | COLOR.{0..MIN_MAX}.{0..MIN_MAX}.Colors
+                | PAINTS.Colors
+                | UNDEFINED
+--datatype DATA = B.Bool | I.Int | BCN.Int.Int | COLOR.Int.Int.Colors | PAINTS.Colors | UNDEFINED
+
+--datatype X = A.({(x,y) | x <- {0..2}, y <- {0..2}})
+--datatype X = A.Set({(x, y) | x <- {0..10}, y <- {0..5}})
+--datatype X = A.Set({(x, y) | x <- VARS, y <- Seq(DATA), #y < 2})
+--datatype FUNC = MEMORY.Set(<Char>, <DATA>) | NEXT.Proc
+
+datatype StrokeTypes = Dot | Hor | Ver
+
+-- Obs represents obstacles as Tiles and Palms
+
+datatype Things = Empty | Obs | Beacon | Start | Paint.Colors
+
+-- map building
+--
+
+-- inputs a sequence that represents the map (RAW_MAP)
+-- outputs a sequence of tuples of the type (x,y,element)
+-- x (column number) starts at 0
+-- y (line number) starts at 0
+
+map2Seq(raw) =
+  let
+    map2Seq_(<>,  y) =  <>
+    map2Seq_(<line>^tail,  y) = processLine(line,y) ^ map2Seq_(tail,y+1)
+  within
+    map2Seq_(raw, 0)
+
+processLine(line, y) =
+  let
+    processLine_(<>, _, _) = <>
+    processLine_(<Empty>^tail, x, y) = processLine_(tail, x+1, y)
+    processLine_(<element>^tail, x, y) = <(x, y, element)> ^ processLine_(tail, x+1, y)
+  within
+    processLine_(line, 0, y)
+
+map2Set(map) =
+  let
+    map2Set_(<>) = {}
+    map2Set_(<(x,y,element)>^tail) = union({(x,y,element)}, map2Set_(tail))
+  within
+    map2Set_(map)
+
+-- inputs a paint sequence
+-- outputs a set of map coordinates that match the paint
+
+formatPaint(<>) = {}
+formatPaint(<(c, t, x, y)>^tail) =
+  let
+    format(c,t,x,y) =
+      if(t == Dot) then
+        {(x,y,Paint.c)}
+      else if (t == Hor) then
+        {(x,y,Paint.c), (x+1,y,Paint.c)}
+      else -- Ver
+        {(x,y,Paint.c), (x,y+1,Paint.c)}
+  within
+    union(format(c,t,x,y), formatPaint(tail))
+
+-- validates whether the input map is a retangule
+isRetangule(map) = let
+    numberOfCells(<>) = 0
+    numberOfCells(<line>^tail) = #line + numberOfCells(tail)
+  within
+    (numberOfCells(map) / #map ) == #head(map)
+
+IS_RETANGULE = isRetangule(RAW_MAP)
+
+-- initialising the map
+--MAP_ = map2Seq(RAW_MAP)
+--MAP = union(map2Set(MAP_) )
+MAP_ = map2Set(map2Seq(RAW_MAP))
+MAP = mapFromList(<((x, y), element) | (x, y, element) <- seq(MAP_)>)
+--
+-- variables and memory
+--
+
+-- map limits
+COLUMNS = length(head(RAW_MAP))
+LINES = length(RAW_MAP)
+XMAX = COLUMNS-1
+YMAX = LINES-1
+
+max(a, b) = if a > b then a else b
+MIN_MAX = max(COLUMNS+1, LINES+1)
+--MIN_MAX = 20
+
+-- orientation
+NORTH_ = 0
+EAST_ = 1
+SOUTH_ = 2
+WEST_ = 3
+
+-- variable types
+{-
+P = debug!INIT -> STOP
+-}
+
+--channel debug : Set({(var,val) | var <- VARS, val <- DATA})
+
+-- memory initial bindings
+single({x}) = head(x)
+
+startX = single({ <x> | (x,y,Start) <- MAP_ })
+startY = single({ <y> | (x,y,Start) <- MAP_ })
+
+INITIAL_PAINTS = 
+  let
+    paint = { ((x, y), color) | (x, y, Paint.color) <- formatPaint(PAINT)}
+  within
+    paint
+
+PREDEFINED_VARS = {"X","Y","ORIENTATION","BEACONS", "RETURN", "CARRYING_BEACON", "IS_PAITING", "PAINTS", "PAINT_COLOR", "NEXT"}
+
+VARS = union(PREDEFINED_VARS,USER_VARS)
+INIT = (| "X" => <I.startX+RADIUS>, 
+        "Y" => <I.startY+RADIUS>,
+        "ORIENTATION" => <I.NORTH_>,
+        "IS_PAITING" => <B.false>,
+        "PAINT_COLOR" => <PAINTS.None>,
+        --"PAINTS" => INITIAL_PAINTS,
+        "RETURN" => <I.0>,
+
+        --"COUNT" => <I.0>,
+        "COUNT_STEPS" => <I.0>,
+--        "TURNS" => <I.0>,
+
+        "MAX_EFFORT" => fillValSeq(INITIAL_EFFORT),
+        "TRIES" => <I.0>,
+        "MAX_COVERED" => <I.0>,
+        "SEARCHING" => <B.false> |)
+
+-- reading and updating memory
+
+--content({}) = <>
+--content({x}) = x
+
+content({}) = <>
+content({x}) = x
+            
+
+get(m, var) = 
+  let
+    check = mapMember(m, var)
+  within
+    if check then mapLookup(m, var) else <UNDEFINED>
+
+
+PaintColor(PAINTS.color) = color
+getPaintColor(m) = PaintColor(head(mapLookup(m, "PAINT_COLOR")))
+setVar(m,var,val) = mapUpdate(m, var, <val>)
+setPaint(paints, x, y, None) = paints
+setPaint(paints, x, y, color) = union(paints, {((x,y), color)})
+
+--
+-- auxiliary functions
+--
+
+-- things within a given position
+--thingsAt_x(map, 0) = if (head(map) == Obs) then ({Obs}) else ({})
+--thingsAt_x(map, col) = thingsAt_x(tail(map), col-1)
+--thingsAt_y(map, col, 0) = thingsAt_x(head(map), col)
+--thingsAt_y(map, col, lin) = thingsAt_y(tail(map), col, lin-1)
+
+thingsAt(col, lin) = if(mapMember(MAP, (col, lin))) then {mapLookup(MAP, (col, lin))} else ({})
+
+colorsAt(col,lin, paints) = 
+  let
+    paints_map = mapFromList(seq(paints))
+  within
+    if(mapMember(paints_map, (col, lin))) then {mapLookup(paints_map, (col, lin))} else ({})
+
+
+--colorsAt(col,lin, paints) =  { color | ((c,l), color) <- paints, c==col, l==lin }
+-- calculates the maximum number of movies to NORTH
+--
+-- moving commands
+--
+
+-- auxiliary for movement commands
+
+channel updatedX : {0..XMAX}
+channel updatedY : {0..YMAX}
+channel updatedORIENTATION : {0..3}
+
+channel backward, forward : {0..1}
+
+channel coverage : {0..100}
+channel covered : {0..100}
+channel isFrontClear : {0..RADIUS}.{0..MIN_MAX}.{0..MIN_MAX}.{0..4}.Bool
+channel isFrontWhite : {0..RADIUS}.{0..MIN_MAX}.{0..MIN_MAX}.{0..4}.Bool
+channel tries : {0..MAX_TRIES}
+channel freemap : {0..200}
+channel steps : {0..200}
+
+
+FORWARD(0, m, paints, next) = next(m, paints)
+FORWARD(n, m, paints, next) =
+  let
+    x = countVar(get(m,"X"))
+    y = countVar(get(m,"Y"))
+    o = countVar(get(m,"ORIENTATION"))
+
+    paint_color = getPaintColor(m)
+
+    searching = toBool(head(get(m, "SEARCHING")))
+
+    --MAX_EFFORT = countVar(get(m, "MAX_EFFORT"))
+    MAX_COVERED = countVar(get(m, "MAX_COVERED"))
+    TRIES = countVar(get(m, "TRIES"))
+
+    --m_ = mapUpdate(m, "COUNT", fillValSeq(count+1))
+
+    cover = COVERAGE(paints)
+
+    m' = mapUpdateMultiple(m, <
+                              --("MAX_EFFORT", fillValSeq(MAX_EFFORT+EFFORT)), 
+                              ("MAX_COVERED", fillValSeq(cover)),
+                              ("TRIES", <I.(TRIES+1)>),
+                              ("SEARCHING", <B.true>)
+                          >)                          
+  within
+    if(cover < COVER) then (
+      steps.card(paints) ->
+      if(frontIsClear(x,y,o)) then(
+        forward!1 ->
+        if(o == NORTH_) then (
+          updatedY!(y-1) -> coverage.cover ->
+          FORWARD(n-1, setVar(m,"Y",I.(y-1)), setPaint(paints, x, y-1, paint_color), next)
+        ) else if(o == EAST_) then (
+          updatedX!(x+1) -> coverage.cover ->
+          FORWARD(n-1, setVar(m,"X",I.(x+1)), setPaint(paints, x+1, y, paint_color), next)
+        ) else if(o == SOUTH_) then (
+          updatedY!(y+1) -> coverage.cover ->
+          FORWARD(n-1, setVar(m,"Y",I.(y+1)), setPaint(paints, x, y+1, paint_color), next)
+        ) else if(o == WEST_) then (
+          updatedX!(x-1) -> coverage.cover ->
+          FORWARD(n-1, setVar(m,"X",I.(x-1)), setPaint(paints, x-1, y, paint_color), next)
+        ) else
+          error("Unexpected state")
+      ) else
+          forward!0 -> coverage.cover ->
+          FORWARD(0, m, paints, next)
+    ) else (
+      --if(cover >= COVER) then (
+        TERMINATE(m, paints)
+      --) else (
+--        if (TRIES < MAX_TRIES) then(
+          --tries.TRIES ->
+          --if(cover == MAX_COVERED) then (
+            --FORWARD(n, m', paints, next) 
+          --) else (
+            --FORWARD(n, mapUpdateMultiple(m', <("TRIES", <I.0>), ("SEARCHING", <B.false>)>), paints, next)
+          --)
+        --) else TERMINATE(m, paints)
+      --)
+    )
+
+BACKWARD(0, m, paints, next) = next(m, paints)
+BACKWARD(n, m, paints, next) =
+  let
+    x = countVar(get(m,"X"))
+    y = countVar(get(m,"Y"))
+    o = countVar(get(m,"ORIENTATION"))
+
+    --count = countVar(get(m, "COUNT"))
+
+    paint_color = getPaintColor(m)
+
+    searching = toBool(head(get(m, "SEARCHING")))
+
+    --MAX_EFFORT = countVar(get(m, "MAX_EFFORT"))
+    MAX_COVERED = countVar(get(m, "MAX_COVERED"))
+    TRIES = countVar(get(m, "TRIES"))
+
+    --m_ = mapUpdate(m, "COUNT", fillValSeq(count+1))
+
+    cover = COVERAGE(paints)
+
+        m' = mapUpdateMultiple(m, <
+                              --("MAX_EFFORT", fillValSeq(MAX_EFFORT+EFFORT)), 
+                              ("MAX_COVERED", fillValSeq(cover)),
+                              ("TRIES", <I.(TRIES+1)>),
+                              ("SEARCHING", <B.true>)
+                          >)                         
+  within
+    if(cover < COVER) then (
+      if(frontIsClear(x,y,(o-2)%4)) then(
+        backward!1 ->
+        if(o == NORTH_) then (
+          updatedY!(y+1) -> coverage.cover ->
+          BACKWARD(n-1, setVar(m,"Y",I.(y+1)), setPaint(paints, x, y+1, paint_color), next)
+        ) else if(o == EAST_) then (
+          updatedX!(x-1) -> coverage.cover ->
+          BACKWARD(n-1, setVar(m,"X",I.(x-1)), setPaint(paints, x-1, y, paint_color), next)
+        ) else if(o == SOUTH_) then (
+          updatedY!(y-1) -> coverage.cover ->
+          BACKWARD(n-1, setVar(m,"Y",I.(y-1)), setPaint(paints, x, y-1, paint_color), next)
+        ) else (
+          updatedX!(x+1) -> coverage.cover ->
+          BACKWARD(n-1, setVar(m,"X",I.(x+1)), setPaint(paints, x+1, y, paint_color), next)
+        ) 
+      ) else
+          backward!0 -> coverage.cover ->
+          BACKWARD(0, m, paints, next)
+    ) else (
+      --if(cover >= COVER) then (
+        TERMINATE(m, paints)
+      --) else (
+        --if (TRIES < MAX_TRIES) then(
+          --tries.TRIES ->
+          --if(cover <= MAX_COVERED) then (
+            --BACKWARD(n, m', paints, next) 
+          --) else (
+            --BACKWARD(n, mapUpdateMultiple(m', <("TRIES", <I.0>), ("SEARCHING", <B.false>)>), paints, next)
+          --)
+        --) else TERMINATE(m, paints)
+      --)
+    )
+
+-- moving commands
+channel right, left, north, south, east, west
+channel turn
+RIGHT(m, paints, next) =
+  let
+    o = countVar(get(m, "ORIENTATION"))
+    m_ = mapUpdateMultiple(m, <("ORIENTATION", <I.((o+1)%4)>)>)
+  within
+    right ->
+    turn ->
+    next(m_, paints)
+
+LEFT(m, paints, next) =
+  let
+    o = countVar(get(m, "ORIENTATION"))
+    m_ = mapUpdateMultiple(m, <("ORIENTATION", <I.((o-1)%4)>)>)
+  within
+    left ->
+    turn ->
+    next(m_, paints)
+
+NORTH(n,m, paints, next) =
+  let
+    m_ = mapUpdateMultiple(m, <("ORIENTATION", <I.NORTH_>)>)
+  within
+      north ->
+      turn ->
+      FORWARD(n,m_, paints, next)
+
+SOUTH(n, m, paints, next) =
+    south ->
+    turn ->
+    FORWARD(n,setVar(m, "ORIENTATION", I.SOUTH_), paints, next)
+
+EAST(n, m, paints, next) =
+    east ->
+    turn -> 
+    FORWARD(n,setVar(m, "ORIENTATION", I.EAST_), paints, next)
+
+WEST(n, m, paints, next) =
+    west ->
+    turn ->
+    FORWARD(n,setVar(m, "ORIENTATION", I.WEST_), paints, next)
+
+--
+-- see functions
+--
+
+-- looks for obstacles
+thingsInFront(x,y,o) =
+  if(o == NORTH_) then
+    thingsAt(x,y-1)
+  else if (o == EAST_) then
+    thingsAt(x+1,y)
+  else if (o == SOUTH_) then
+    thingsAt(x,y+1)
+  else
+    thingsAt(x-1,y)
+
+colorsInFront(x, y, o, paints) = 
+  if(o == NORTH_) then
+    colorsAt(x,y-1, paints)
+  else if (o == EAST_) then
+    colorsAt(x+1,y, paints)
+  else if (o == SOUTH_) then
+    colorsAt(x,y+1, paints)
+  else
+    colorsAt(x-1,y, paints)
+
+frontIsObstacle(x,y,o) = thingsInFront(x,y,o) == {Obs}
+
+frontIsWhite(x, y, o, paints) = 
+    colorsInFront(x, y, o, paints) == {White}
+
+leftIsWhite(x, y, o, paints) = frontIsWhite(x, y, (o-1)%4, paints)
+rightIsWhite(x, y, o, paints) = frontIsWhite(x, y, (o+1)%4, paints)
+
+allLeftIsWhite(r, x, y, o, paints) = allFrontIsWhite(r, x, y, (o-1)%4, paints)
+allRightIsWhite(r, x, y, o, paints) = allFrontIsWhite(r, x, y, (o+1)%4, paints)
+
+anyLeftIsWhite(r, x, y, o, paints) = anyFrontIsWhite(r, x, y, (o-1)%4, paints)
+anyRightIsWhite(r, x, y, o, paints) = anyFrontIsWhite(r, x, y, (o+1)%4, paints)
+
+anyFrontIsWhite(-1, x, y, o, paints) = false
+anyFrontIsWhite(r, x, y, o, paints) = 
+  if(o == NORTH_) then (
+      frontIsWhite(x-r, y-RADIUS, o, paints) 
+      or frontIsWhite(x+r, y-RADIUS, o,paints) 
+      or anyFrontIsWhite(r-1, x, y, o, paints)
+  ) else if (o == EAST_) then (
+      frontIsWhite(x+RADIUS, y-r, o, paints) 
+      or frontIsWhite(x+RADIUS, y+r, o, paints) 
+      or anyFrontIsWhite(r-1, x, y, o, paints)
+  ) else if (o == SOUTH_) then (
+      frontIsWhite(x-r, y+RADIUS, o, paints) 
+      or frontIsWhite(x+r, y+RADIUS, o, paints) 
+      or anyFrontIsWhite(r-1, x, y, o, paints)
+  ) else (
+      frontIsWhite(x-RADIUS, y-r, o, paints) 
+      or frontIsWhite(x-RADIUS, y+r, o, paints) 
+      or anyFrontIsWhite(r-1, x, y, o, paints)
+  )
+
+allFrontIsWhite (-1, x, y, o, paints) = true
+allFrontIsWhite (r, x, y, o, paints) = 
+  if(o == NORTH_) then (
+      frontIsWhite(x-r, y-RADIUS, o, paints) 
+      and frontIsWhite(x+r, y-RADIUS, o,paints) 
+      and allFrontIsWhite(r-1, x, y, o, paints)
+  ) else if (o == EAST_) then (
+      frontIsWhite(x+RADIUS, y-r, o, paints) 
+      and frontIsWhite(x+RADIUS, y+r, o, paints) 
+      and allFrontIsWhite(r-1, x, y, o, paints)
+  ) else if (o == SOUTH_) then (
+      frontIsWhite(x-r, y+RADIUS, o, paints) 
+      and frontIsWhite(x+r, y+RADIUS, o, paints) 
+      and allFrontIsWhite(r-1, x, y, o, paints)
+  ) else (
+      frontIsWhite(x-RADIUS, y-r, o, paints) 
+      and frontIsWhite(x-RADIUS, y+r, o, paints) 
+      and allFrontIsWhite(r-1, x, y, o, paints)
+  )
+
+allRightIsClear(r, x, y, o) = allFrontIsClear(r, x, y, (o+1)%4)
+allLeftIsClear(r, x, y, o) = allFrontIsClear(r, x, y, (o-1)%4)
+
+allFrontIsClear(-1, x, y, o) = true
+
+allFrontIsClear(r, x, y, o) = 
+  if(o == NORTH_) then (
+      frontIsClear(x-r, y-RADIUS, o) 
+      and frontIsClear(x+r, y-RADIUS, o) 
+      and allFrontIsClear(r-1, x, y, o)
+  ) else if (o == EAST_) then (
+      frontIsClear(x+RADIUS, y-r, o) 
+      and frontIsClear(x+RADIUS, y+r, o) 
+      and allFrontIsClear(r-1, x, y, o)
+  ) else if (o == SOUTH_) then (
+      frontIsClear(x-r, y+RADIUS, o) 
+      and frontIsClear(x+r, y+RADIUS, o) 
+      and allFrontIsClear(r-1, x, y, o)
+  ) else (
+      frontIsClear(x-RADIUS, y-r, o) 
+      and frontIsClear(x-RADIUS, y+r, o) 
+      and allFrontIsClear(r-1, x, y, o)
+  )
+
+frontIsClear(x,y,o) = not(frontIsObstacle(x,y,o)) 
+
+leftIsObstacle(x,y,o) = frontIsObstacle(x, y, (o-1)%4)
+leftIsClear(x,y,o) = not(frontIsObstacle(x,y,(o-1)%4)) 
+
+rightIsObstacle(x,y,o) = frontIsObstacle(x, y, (o+1)%4)
+rightIsClear(x,y,o) = not(frontIsObstacle(x,y,(o+1)%4))
+
+ASSIGN(var, val, m, paints, next) =
+														let
+															m_ = mapUpdate(m, var, val)
+														within
+																next(m_, paints)
+
+RETURN(var, func, m, paints, next) =
+											let
+												ASSIGN_VALUE(m, paints) = ASSIGN(var, get(m, "RETURN"), m, paints, UPDATE_VALUE)
+												UPDATE_VALUE(m, paints) = ASSIGN("RETURN", <UNDEFINED>, m, paints, next)
+											within
+												func(m, paints, ASSIGN_VALUE)
+
+PAINTBYRADIUS(x, y, radius, color) =
+  if(radius > 0) then (
+    if(x - radius < 1 or y - radius < 1 or x + radius > XMAX or y + radius > YMAX ) then (
+      error("overlapping robot")
+    ) else(
+      union({
+        ((x+radius, y), color),
+        ((x-radius, y), color),
+        ((x, y+radius), color),
+        ((x, y-radius), color),
+        ((x-radius, y-radius), color),
+        ((x-radius, y+radius), color),
+        ((x+radius, y-radius), color),
+        ((x+radius, y+radius), color)
+      }, PAINTBYRADIUS(x, y, radius-1, color))
+    )
+  ) else (
+    {((x, y), color)}
+  )
+
+GETPAINTSINROWCOLUMN(paints, x, y, radius) =
+  let
+    paints1 = { ((c, l), color) | ((c, l), color) <- paints, x+radius==c and l+radius==y and x+radius==c and l-radius==y and x-radius==c and l+radius==y and x-radius==c and l-radius==y}
+    paints2 = { ((c, l), color) | ((c, l), color) <- paints, x==c and l==y}
+  within
+    if(radius > 0) then (
+      union(paints1, GETPAINTSINROWCOLUMN(paints, x, y, radius-1))
+    ) else (
+      paints2
+    )
+
+PAINTWHITE(m, paints, next) =
+  let
+    x = countVar(get(m,"X"))
+    y = countVar(get(m,"Y"))
+    m_ = mapUpdateMultiple(m, <("IS_PAITING", <B.true>),("PAINT_COLOR", <PAINTS.White>)>)
+    paints_ = union(paints, {((x, y), White)})
+  within
+    next(m_, paints_)
+
+PAINTBLACK(m, paints, next) =
+  let
+    m_ = mapUpdateMultiple(m, <("IS_PAITING", <B.true>),("PAINT_COLOR", <PAINTS.Black>)>)
+  within
+    next(m_, paints)
+
+STOPPAINTING(m, paints, next) =
+  let
+    m_ = mapUpdateMultiple(m, <("IS_PAITING", <B.false>),("PAINT_COLOR", <PAINTS.None>)>)
+  within
+    next(m_, paints)
+
+
+
+ERROR2(m) = END(m) {-Variavel fora de escopo-}
+
+toBool(B.b) = b
+toBool(I.i) = (i != 0)
+
+toInt(B.true) = 1
+toInt(B.false) = 0
+toInt(I.i) = i
+
+--
+-- program snipets
+--
+
+
+channel coin : Bool
+
+END(m) = STOP
+TERMINATE(m, paints) =
+              let
+                cover = COVERAGE(paints)
+                --count = countVar(get(m, "COUNT"))
+                MAX_EFFORT = countVar(get(m, "MAX_EFFORT"))
+                TRIES = countVar(get(m, "TRIES"))
+                TURNS = countVar(get(m, "TURNS"))
+              within
+              if (false) then (
+                tries.TRIES -> covered.cover -> SKIP
+              ) else (
+                tries.TRIES -> covered.cover -> SKIP
+              )
+
+FREE_SPOTS(line, y) =
+  let
+    processLine_(<>, _, _) = <>
+    processLine_(<Empty>^tail, x, y) = <(x, y, Empty)> ^ processLine_(tail, x+1, y)
+    processLine_(<Start>^tail, x, y) = <(x, y, Empty)> ^ processLine_(tail, x+1, y)
+    processLine_(<Beacon>^tail, x, y) = <(x, y, Empty)> ^ processLine_(tail, x+1, y)
+    processLine_(<element>^tail, x, y) = processLine_(tail, x+1, y)
+  within
+    processLine_(line, 0, y)
+    
+freeMap2Seq(raw) =
+  let
+    freeMap2Seq_(<>,  y) =  <>
+    freeMap2Seq_(<line>^tail,  y) = FREE_SPOTS(line,y) ^ freeMap2Seq_(tail,y+1)
+  within
+    freeMap2Seq_(raw, 0)
+
+
+FREE_MAP = #freeMap2Seq(RAW_MAP)
+
+countVar(val) = 
+  let
+    countVar_(<>, count) = count
+    countVar_(<I.val>^tail, count) = countVar_(tail, count*MIN_MAX+val)
+  within
+    countVar_(val, 0)
+
+fillValSeq(val) = 
+  let
+    fillValSeq_(0, seq) = seq
+    fillValSeq_(val, seq) = fillValSeq_(val/MIN_MAX, <I.val%MIN_MAX>^seq)
+  within
+    fillValSeq_(val, <>)
+
+COVERAGE(paints) =
+  let
+    paints_count = card(paints)
+  within
+      100*paints_count/FREE_MAP

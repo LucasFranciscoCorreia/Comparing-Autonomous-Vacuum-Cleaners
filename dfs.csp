@@ -1,0 +1,56 @@
+dfs(m, paints, next) =
+    let
+        IF1(m, paints) = 
+            let
+                x = countVar(get(m,"X"))
+                y = countVar(get(m,"Y"))
+                o = countVar(get(m,"ORIENTATION"))
+                FORWARD2(m, paints) = FORWARD(1, m, paints, PROC_CALL3)
+                PROC_CALL3(m, paints) = dfs(m, paints, BACKWARD4)
+                BACKWARD4(m, paints) = BACKWARD(1, m, paints, IF5)
+            within
+                if(frontIsClear(x, y, o)) and not(frontIsWhite(x, y, o, paints)) then (
+                    FORWARD2(m, paints)
+                ) else (
+                    IF5(m, paints)
+                )
+        IF5(m, paints) =
+            let
+                x = countVar(get(m,"X"))
+                y = countVar(get(m,"Y"))
+                o = countVar(get(m,"ORIENTATION"))
+                LEFT6(m, paints) = LEFT(m, paints, FORWARD7)
+                FORWARD7(m, paints) = FORWARD(1, m, paints, PROC_CALL8)
+                PROC_CALL8(m, paints) = dfs(m, paints, BACKWARD9)
+                BACKWARD9(m, paints) = BACKWARD(1, m, paints, RIGHT10)
+                RIGHT10(m, paints) = RIGHT(m, paints, IF11)
+            within
+                if(leftIsClear(x, y, o)) and not(leftIsWhite(x, y, o, paints)) then (
+                    LEFT6(m, paints)
+                ) else (
+                    IF11(m, paints)
+                )
+        IF11(m, paints) =
+            let
+                x = countVar(get(m,"X"))
+                y = countVar(get(m,"Y"))
+                o = countVar(get(m,"ORIENTATION"))
+                RIGHT12(m, paints) = RIGHT(m, paints, FORWARD13)
+                FORWARD13(m, paints) = FORWARD(1, m, paints, PROC_CALL14)
+                PROC_CALL14(m, paints) = dfs(m, paints, BACKWARD15)
+                BACKWARD15(m, paints) = BACKWARD(1, m, paints, LEFT16)
+                LEFT16(m, paints) = LEFT(m, paints, next)
+            within
+                if(rightIsClear(x, y, o)) and not(rightIsWhite(x, y, o, paints)) then (
+                    RIGHT12(m, paints)
+                ) else (
+                    next(m, paints)
+                )
+    within
+        IF1(m, paints)
+
+USER_VARS={}
+PROGRAM = PAINTWHITE4(INIT, INITIAL_PAINTS)
+PAINTWHITE4(m, paints) = PAINTWHITE(m, paints, SOUTH5)
+SOUTH5(m, paints) = SOUTH(0, m, paints, PROC_CALL6)
+PROC_CALL6(m, paints) = dfs(m, paints, TERMINATE)

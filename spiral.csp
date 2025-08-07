@@ -1,0 +1,57 @@
+spiral(m, paints, next) =
+    let
+        IF1(m, paints) = 
+            let
+                x = countVar(get(m,"X"))
+                y = countVar(get(m,"Y"))
+                o = countVar(get(m,"ORIENTATION"))
+                RIGHT2(m, paints) = RIGHT(m, paints, FORWARD3)
+                FORWARD3(m, paints) = FORWARD(1, m, paints, PROC_CALL4)
+                PROC_CALL4(m, paints) = spiral(m, paints, BACKWARD5)
+                BACKWARD5(m, paints) = BACKWARD(1, m, paints, LEFT6)
+                LEFT6(m, paints) = LEFT(m, paints, IF7)
+            within
+                if(rightIsClear(x, y, o)) and not(rightIsWhite(x, y, o, paints)) then (
+                    RIGHT2(m, paints)
+                ) else (
+                    IF7(m, paints)
+                )
+        IF7(m, paints) =
+            let
+                x = countVar(get(m,"X"))
+                y = countVar(get(m,"Y"))
+                o = countVar(get(m,"ORIENTATION"))
+                FORWARD8(m, paints) = FORWARD(1, m, paints, PROC_CALL9)
+                PROC_CALL9(m, paints) = spiral(m, paints, BACKWARD10)
+                BACKWARD10(m, paints) = BACKWARD(1, m, paints, IF11)
+            within
+                if(frontIsClear(x, y, o)) and not(frontIsWhite(x, y, o, paints)) then (
+                    FORWARD8(m, paints)
+                ) else (
+                    IF11(m, paints)
+                )
+        IF11(m, paints) =
+            let
+                x = countVar(get(m,"X"))
+                y = countVar(get(m,"Y"))
+                o = countVar(get(m,"ORIENTATION"))
+                LEFT12(m, paints) = LEFT(m, paints, FORWARD13)
+                FORWARD13(m, paints) = FORWARD(1, m, paints, PROC_CALL14)
+                PROC_CALL14(m, paints) = spiral(m, paints, BACKWARD15)
+                BACKWARD15(m, paints) = BACKWARD(1, m, paints, RIGHT16)
+                RIGHT16(m, paints) = RIGHT(m, paints, next)
+            within
+                if(leftIsClear(x, y, o)) and not(leftIsWhite(x, y, o, paints)) then (
+                    LEFT12(m, paints)
+                ) else (
+                    next(m, paints)
+                )
+
+    within
+        IF1(m, paints)
+
+USER_VARS={}
+PROGRAM = PAINTWHITE4(INIT, INITIAL_PAINTS)
+PAINTWHITE4(m, paints) = PAINTWHITE(m, paints, SOUTH5)
+SOUTH5(m, paints) = SOUTH(0, m, paints, PROC_CALL6)
+PROC_CALL6(m, paints) = spiral(m, paints, TERMINATE)

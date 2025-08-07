@@ -1,0 +1,16 @@
+PAINT = < >
+RAW_MAP = <
+    <Obs,	Obs,	Obs,	Obs,	Obs,	Obs,	Obs,	Obs,	Obs,	Obs,	Obs,	Obs>,	
+    <Obs,	Start,	Obs,	Obs,	Obs,	Obs,	Obs,	Obs,	Obs,	Obs,	Empty,	Obs>,	
+    <Obs,	Empty,	Obs,	Obs,	Obs,	Obs,	Obs,	Obs,	Obs,	Obs,	Empty,	Obs>,	
+    <Obs,	Empty,	Empty,	Obs,	Obs,	Obs,	Obs,	Obs,	Empty,	Empty,	Empty,	Obs>,	
+    <Obs,	Empty,	Empty,	Obs,	Obs,	Obs,	Obs,	Obs,	Empty,	Empty,	Empty,	Obs>,	
+    <Obs,	Empty,	Empty,	Obs,	Obs,	Obs,	Obs,	Obs,	Empty,	Empty,	Empty,	Obs>,	
+    <Obs,	Empty,	Empty,	Obs,	Obs,	Obs,	Obs,	Obs,	Empty,	Empty,	Empty,	Obs>,	
+    <Obs,	Empty,	Empty,	Obs,	Obs,	Obs,	Obs,	Obs,	Empty,	Empty,	Empty,	Obs>,	
+    <Obs,	Empty,	Empty,	Empty,	Empty,	Empty,	Empty,	Empty,	Empty,	Empty,	Empty,	Obs>,	
+    <Obs,	Empty,	Empty,	Empty,	Empty,	Empty,	Empty,	Empty,	Empty,	Empty,	Empty,	Obs>,	
+    <Obs,	Obs,	Obs,	Obs,	Obs,	Obs,	Obs,	Obs,	Empty,	Empty,	Empty,	Obs>,	
+    <Obs,	Obs,	Obs,	Obs,	Obs,	Obs,	Obs,	Obs,	Obs,	Obs,	Obs,	Obs>
+>
+

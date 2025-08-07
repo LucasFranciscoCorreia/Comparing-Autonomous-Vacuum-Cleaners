@@ -1,0 +1,311 @@
+eastIsClear(m, paints, next) =
+		let
+			EAST1(m, paints) = EAST(0, m, paints, RETURN2)
+			RETURN2(m, paints) = 
+				let
+					x = countVar(get(m,"X"))
+					y = countVar(get(m,"Y"))
+					o = countVar(get(m,"ORIENTATION"))
+				within
+					ASSIGN("RETURN", <B.(frontIsClear(x, y, o) and not(frontIsWhite(x, y, o, paints)))>, m, paints, next)
+		within
+			EAST1(m, paints)
+			
+westIsClear(m, paints, next) =
+		let
+			WEST3(m, paints) = WEST(0, m, paints, RETURN4)
+			RETURN4(m, paints) = 
+				let
+					x = countVar(get(m,"X"))
+					y = countVar(get(m,"Y"))
+					o = countVar(get(m,"ORIENTATION"))
+				within
+					ASSIGN("RETURN", <B.(frontIsClear(x, y, o) and not(frontIsWhite(x, y, o, paints)))>, m, paints, next)
+		within
+			WEST3(m, paints)
+			
+northIsClear(m, paints, next) =
+		let
+			NORTH5(m, paints) = NORTH(0, m, paints, RETURN6)
+			RETURN6(m, paints) = 
+				let
+					x = countVar(get(m,"X"))
+					y = countVar(get(m,"Y"))
+					o = countVar(get(m,"ORIENTATION"))
+				within
+					ASSIGN("RETURN", <B.(frontIsClear(x, y, o) and not(frontIsWhite(x, y, o, paints)))>, m, paints, next)
+		within
+			NORTH5(m, paints)
+			
+southIsClear(m, paints, next) =
+		let
+			SOUTH7(m, paints) = SOUTH(0, m, paints, RETURN8)
+			RETURN8(m, paints) = 
+				let
+					x = countVar(get(m,"X"))
+					y = countVar(get(m,"Y"))
+					o = countVar(get(m,"ORIENTATION"))
+				within
+					ASSIGN("RETURN", <B.(frontIsClear(x, y, o) and not(frontIsWhite(x, y, o, paints)))>, m, paints, next)
+		within
+			SOUTH7(m, paints)
+		
+
+USER_VARS = {"AUX1","AUX2","AUX3","AUX4","AUX5","AUX6","AUX7","AUX8","AUX9","AUX10","AUX11","AUX12"}
+
+PROGRAM = PAINTWHITE1(INIT, INITIAL_PAINTS)
+PAINTWHITE1(m, paints) = PAINTWHITE(m, paints, WHILE2)
+WHILE2(m, paints) = 
+		let
+		  x = countVar(get(m, "X"))
+		  y = countVar(get(m, "Y"))
+		  o = countVar(get(m, "ORIENTATION"))
+		  
+		  {- WHILE true -}
+		  WHILE3(m, paints) = 
+		  		let
+		  		  x = countVar(get(m, "X"))
+		  		  y = countVar(get(m, "Y"))
+		  		  o = countVar(get(m, "ORIENTATION"))
+		  		  
+		  		  {- WHILE true -}
+		  		  FORWARD4(m, paints) = FORWARD(1, m, paints, WHILE3)
+		  		  
+		  		  {- end WHILE-}
+		  		within
+		  				if(frontIsClear(x, y, o)) then (
+		  					FORWARD4(m, paints)
+		  				) else (
+		  					IF5(m, paints)
+		  				)
+		  IF5(m, paints) = 
+		   let
+		  	 x = countVar(get(m,"X"))
+		  	 y = countVar(get(m,"Y"))
+		  	 o = countVar(get(m,"ORIENTATION"))
+		  	 
+		  	  {- IF true (length : 13)-}
+		  	 ASSIGN6(m, paints) = RETURN("AUX1",northIsClear, m, paints, ASSIGN7)
+		  	 ASSIGN7(m, paints) = RETURN("AUX2",southIsClear, m, paints, IF8)
+		  	 IF8(m, paints) = 
+		  	  let
+		  	 	 x = countVar(get(m,"X"))
+		  	 	 y = countVar(get(m,"Y"))
+		  	 	 o = countVar(get(m,"ORIENTATION"))
+				 
+		  	 	 AUX1 = toBool(head(get(m, "AUX1")))
+		  	 	 AUX2 = toBool(head(get(m, "AUX2")))
+		  	 	 
+		  	 	  {- IF true (length : 1)-}
+		  	 	 NORTH9(m, paints) = NORTH(1,m, paints, WHILE2)
+		  	 	 
+		  	 	 {- IF false (length : 9)-}	 
+		  	 	 ASSIGN10(m, paints) = RETURN("AUX3",southIsClear, m, paints, ASSIGN11)
+		  	 	 ASSIGN11(m, paints) = RETURN("AUX4",northIsClear, m, paints, IF12)
+		  	 	 IF12(m, paints) = 
+		  	 	  let
+		  	 	 	 x = countVar(get(m,"X"))
+		  	 	 	 y = countVar(get(m,"Y"))
+		  	 	 	 o = countVar(get(m,"ORIENTATION"))
+					 
+		  	 	 	 AUX3 = toBool(head(get(m, "AUX3")))
+		  	 	 	 AUX4 = toBool(head(get(m, "AUX4")))
+		  	 	 	 
+		  	 	 	  {- IF true (length : 1)-}
+		  	 	 	 SOUTH13(m, paints) = SOUTH(1,m, paints, WHILE2)
+		  	 	 	 
+		  	 	 	 {- IF false (length : 5)-}	 
+		  	 	 	 IF14(m, paints) = 
+		  	 	 	  let
+		  	 	 	 	 x = countVar(get(m,"X"))
+		  	 	 	 	 y = countVar(get(m,"Y"))
+		  	 	 	 	 o = countVar(get(m,"ORIENTATION"))
+		  	 	 	 	 
+		  	 	 	 	  {- IF true (length : 2)-}
+		  	 	 	 	 ASSIGN15(m, paints) = RETURN("AUX5",northIsClear, m, paints, IF16)
+		  	 	 	 	 IF16(m, paints) = 
+		  	 	 	 	 	let
+		  	 	 	 	 	 x = countVar(get(m,"X"))
+		  	 	 	 	 	 y = countVar(get(m,"Y"))
+		  	 	 	 	 	 o = countVar(get(m,"ORIENTATION"))
+							 
+		  	 	 	 	 	 AUX5 = toBool(head(get(m, "AUX5")))
+		  	 	 	 	 	 
+		  	 	 	 	 	  {- IF true -}
+		  	 	 	 	 	 NORTH17(m, paints) = NORTH(1,m, paints, WHILE2)
+		  	 	 	 	 	 
+		  	 	 	 	 	 {- end IF -}
+		  	 	 	 	   within
+		  	 	 	 	 		 if(AUX5) then (
+		  	 	 	 	 		   	NORTH17(m, paints)
+		  	 	 	 	 		 ) else (
+		  	 	 	 	 		 	WHILE2(m, paints)
+		  	 	 	 	 		 )
+		  	 	 	 	 
+		  	 	 	 	 {- IF false (length : 2)-}	 
+		  	 	 	 	 ASSIGN17(m, paints) = RETURN("AUX6",southIsClear, m, paints, IF18)
+		  	 	 	 	 IF18(m, paints) = 
+		  	 	 	 	 	let
+		  	 	 	 	 	 x = countVar(get(m,"X"))
+		  	 	 	 	 	 y = countVar(get(m,"Y"))
+		  	 	 	 	 	 o = countVar(get(m,"ORIENTATION"))
+							 
+		  	 	 	 	 	 AUX6 = toBool(head(get(m, "AUX6")))
+		  	 	 	 	 	 
+		  	 	 	 	 	  {- IF true -}
+		  	 	 	 	 	 SOUTH19(m, paints) = SOUTH(1, m, paints, WHILE2)
+		  	 	 	 	 	 
+		  	 	 	 	 	 {- end IF -}
+		  	 	 	 	   within
+		  	 	 	 	 		 if(AUX6) then (
+		  	 	 	 	 		   	SOUTH19(m, paints)
+		  	 	 	 	 		 ) else (
+		  	 	 	 	 		 	WHILE2(m, paints)
+		  	 	 	 	 		 )
+		  	 	 	 	 
+		  	 	 	 	 {- end IF -}
+		  	 	 	    within
+							coin?c -> 
+		  	 	 	 	 	if(c) then (
+		  	 	 	 	 	  	ASSIGN15(m, paints)
+		  	 	 	 	 	) else (
+		  	 	 	 		   	ASSIGN17(m, paints)
+		  	 	 	 	 	)
+		  	 	 	 
+		  	 	 	 {- end IF -}
+		  	 	    within
+		  	 	 	 	if(AUX3 and not(AUX4)) then (
+		  	 	 	 	  	SOUTH13(m, paints)
+		  	 	 	 	) else (
+		  	 	 		   	IF14(m, paints)
+		  	 	 	 	)
+		  	 	 
+		  	 	 {- end IF -}
+		  	    within
+		  	 	 	if(AUX1 and not(AUX2)) then (
+		  	 	 	  	NORTH9(m, paints)
+		  	 	 	) else (
+		  	 		   	ASSIGN10(m, paints)
+		  	 	 	)
+		  	 
+		  	 {- IF false (length : 13)-}	 
+		  	 ASSIGN19(m, paints) = RETURN("AUX7",eastIsClear, m, paints, ASSIGN20)
+		  	 ASSIGN20(m, paints) = RETURN("AUX8",westIsClear, m, paints, IF21)
+		  	 IF21(m, paints) = 
+		  	  let
+		  	 	 x = countVar(get(m,"X"))
+		  	 	 y = countVar(get(m,"Y"))
+		  	 	 o = countVar(get(m,"ORIENTATION"))
+				 
+		  	 	 AUX7 = toBool(head(get(m, "AUX7")))
+		  	 	 AUX8 = toBool(head(get(m, "AUX8")))
+		  	 	 
+		  	 	  {- IF true (length : 1)-}
+		  	 	 EAST22(m, paints) = EAST(1,m, paints,  WHILE2)
+		  	 	 
+		  	 	 {- IF false (length : 9)-}	 
+		  	 	 ASSIGN23(m, paints) = RETURN("AUX9",westIsClear, m, paints, ASSIGN24)
+		  	 	 ASSIGN24(m, paints) = RETURN("AUX10",eastIsClear, m, paints, IF25)
+		  	 	 IF25(m, paints) = 
+		  	 	  let
+		  	 	 	 x = countVar(get(m,"X"))
+		  	 	 	 y = countVar(get(m,"Y"))
+		  	 	 	 o = countVar(get(m,"ORIENTATION"))
+					 
+		  	 	 	 AUX9 = toBool(head(get(m, "AUX9")))
+		  	 	 	 AUX10 = toBool(head(get(m, "AUX10")))
+		  	 	 	 
+		  	 	 	  {- IF true (length : 1)-}
+		  	 	 	 WEST26(m, paints) = WEST(1,m, paints, WHILE2)
+		  	 	 	 
+		  	 	 	 {- IF false (length : 5)-}	 
+		  	 	 	 IF27(m, paints) = 
+		  	 	 	  let
+		  	 	 	 	 x = countVar(get(m,"X"))
+		  	 	 	 	 y = countVar(get(m,"Y"))
+		  	 	 	 	 o = countVar(get(m,"ORIENTATION"))
+		  	 	 	 	 
+		  	 	 	 	  {- IF true (length : 2)-}
+		  	 	 	 	 ASSIGN28(m, paints) = RETURN("AUX11",eastIsClear, m, paints, IF29)
+		  	 	 	 	 IF29(m, paints) = 
+		  	 	 	 	 	let
+		  	 	 	 	 	 x = countVar(get(m,"X"))
+		  	 	 	 	 	 y = countVar(get(m,"Y"))
+		  	 	 	 	 	 o = countVar(get(m,"ORIENTATION"))
+							 
+		  	 	 	 	 	 AUX11 = toBool(head(get(m, "AUX11")))
+		  	 	 	 	 	 
+		  	 	 	 	 	  {- IF true -}
+		  	 	 	 	 	 EAST30(m, paints) = EAST(1,m, paints, WHILE2)
+		  	 	 	 	 	 
+		  	 	 	 	 	 {- end IF -}
+		  	 	 	 	   within
+		  	 	 	 	 		 if(AUX11) then (
+		  	 	 	 	 		   	EAST30(m, paints)
+		  	 	 	 	 		 ) else (
+		  	 	 	 	 		 	WHILE2(m, paints)
+		  	 	 	 	 		 )
+		  	 	 	 	 
+		  	 	 	 	 {- IF false (length : 2)-}	 
+		  	 	 	 	 ASSIGN30(m, paints) = RETURN("AUX12",westIsClear, m, paints, IF31)
+		  	 	 	 	 IF31(m, paints) = 
+		  	 	 	 	 	let
+		  	 	 	 	 	 x = countVar(get(m,"X"))
+		  	 	 	 	 	 y = countVar(get(m,"Y"))
+		  	 	 	 	 	 o = countVar(get(m,"ORIENTATION"))
+							 
+		  	 	 	 	 	 AUX12 = toBool(head(get(m, "AUX12")))
+		  	 	 	 	 	 
+		  	 	 	 	 	  {- IF true -}
+		  	 	 	 	 	 WEST32(m, paints) = WEST(1,m, paints, WHILE2)
+		  	 	 	 	 	 
+		  	 	 	 	 	 {- end IF -}
+		  	 	 	 	   within
+		  	 	 	 	 		 if(AUX12) then (
+		  	 	 	 	 		   	WEST32(m, paints)
+		  	 	 	 	 		 ) else (
+		  	 	 	 	 		 	WHILE2(m, paints)
+		  	 	 	 	 		 )
+		  	 	 	 	 
+		  	 	 	 	 {- end IF -}
+		  	 	 	    within
+							coin?c -> 
+		  	 	 	 	 	if(c) then (
+		  	 	 	 	 	  	ASSIGN28(m, paints)
+		  	 	 	 	 	) else (
+		  	 	 	 		   	ASSIGN30(m, paints)
+		  	 	 	 	 	)
+		  	 	 	 
+		  	 	 	 {- end IF -}
+		  	 	    within
+		  	 	 	 	if(AUX9 and not(AUX10)) then (
+		  	 	 	 	  	WEST26(m, paints)
+		  	 	 	 	) else (
+		  	 	 		   	IF27(m, paints)
+		  	 	 	 	)
+		  	 	 
+		  	 	 {- end IF -}
+		  	    within
+		  	 	 	if(AUX7 and not(AUX8)) then (
+		  	 	 	  	EAST22(m, paints)
+		  	 	 	) else (
+		  	 		   	ASSIGN23(m, paints)
+		  	 	 	)
+		  	 
+		  	 {- end IF -}
+		     within
+				coin?c -> 
+		  	 	if(c) then (
+		  	 	  	ASSIGN6(m, paints)
+		  	 	) else (
+		  		   	ASSIGN19(m, paints)
+		  	 	)
+		  
+		  {- end WHILE-}
+		within
+			--if(not(allFrontIsWhite(RADIUS, x, y, o, paints))) then (
+			if(true) then (
+				WHILE3(m, paints)
+			) else (
+				TERMINATE(m, paints)
+			)

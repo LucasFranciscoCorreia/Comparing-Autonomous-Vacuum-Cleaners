@@ -1,0 +1,28 @@
+include "robomodel_exp.csp"
+
+
+-- include "code1.csp"
+-- include "code2.csp"
+include "dfs.csp"
+-- include "spiral.csp"
+
+
+include "LivingRoom/livingroom.csp"
+-- include "Kitchen/kitchen.csp"
+-- include "Room1/room1.csp"
+-- include "Room2/room2.csp"
+-- include "Room3/room3.csp"
+
+
+RADIUS = 0
+
+STEPS = 5
+COVER = 10
+EFFORT = 5
+MAX_TRIES = 3
+INITIAL_EFFORT = MIN_MAX
+
+
+
+
+assert STOP [T= PROGRAM \diff(Events, {| covered |})

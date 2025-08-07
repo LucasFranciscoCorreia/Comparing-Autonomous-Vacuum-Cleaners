@@ -1,0 +1,26 @@
+procedure dfs(){
+    if(frontIsClear and not(frontIsWhite)){
+        forward(1)
+        dfs()
+        backward(1)
+    }
+    
+    if(leftIsClear and not(leftIsWhite)){
+        left
+        forward(1)
+        dfs()
+        backward(1)
+        right
+    }
+    
+    if(rightIsClear and not(rightIsWhite)){   
+        right
+        forward(1)
+        dfs()
+        backward(1)
+        left
+    }
+}
+paintWhite
+south(0)
+dfs()
